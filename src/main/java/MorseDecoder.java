@@ -53,10 +53,35 @@ public class MorseDecoder {
 
         double[] sampleBuffer = new double[BIN_SIZE * inputFile.getNumChannels()];
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
+            returnBuffer[binIndex] += Math.abs(sampleBuffer[binIndex]);
+            if ((totalBinCount < BIN_SIZE) && !(binIndex == totalBinCount)) {
+                throw new RuntimeException();
+            }
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
         }
         return returnBuffer;
+    }
+
+    /**
+     * good.
+     * @param powerCount hhh.
+     * @return ...
+     */
+    private static String powerCountToDash(final int powerCount) {
+        if (powerCount > 0) {
+            if (powerCount > DASH_BIN_COUNT) {
+                return "--";
+            } else {
+                return ".";
+            }
+        } else if (powerCount < 0) {
+                if (Math.abs(powerCount) > DASH_BIN_COUNT) {
+                    return "";
+                }
+            }
+
+        return "";
     }
 
     /** Power threshold for power or no power. You may need to modify this value. */
@@ -77,6 +102,26 @@ public class MorseDecoder {
      * @return the Morse code string of dots, dashes, and spaces
      */
     private static String powerToDotDash(final double[] powerMeasurements) {
+        int sawPowerCount = 0;
+        String returnString = "";
+        for (int binIndex = 0; binIndex < powerMeasurements.length; binIndex++) {
+            double powerMeasurement = powerMeasurements[binIndex];
+            if (powerMeasurement > POWER_THRESHOLD) {
+                if (sawPowerCount < 0) {
+                    returnString = powerCountToDash(sawPowerCount);
+                    sawPowerCount = 0;
+                }
+                sawPowerCount++;
+            } else {
+                if (sawPowerCount > 0) {
+                    returnString += powerCountToDash(sawPowerCount);
+                    sawPowerCount = 0;
+                }
+            }
+            sawPowerCount--;
+        }
+        returnString += powerCountToDash(sawPowerCount);
+        return returnString;
         /*
          * There are four conditions to handle. Symbols should only be output when you see
          * transitions. You will also have to store how much power or silence you have seen.
@@ -86,8 +131,6 @@ public class MorseDecoder {
         // else if ispower and not waspower
         // else if issilence and wassilence
         // else if issilence and not wassilence
-
-        return "";
     }
 
     /**
